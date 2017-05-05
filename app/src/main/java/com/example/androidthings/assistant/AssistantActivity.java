@@ -247,7 +247,7 @@ public class AssistantActivity extends Activity implements Button.OnButtonEventL
             Log.d(TAG, "creating voice hat driver");
             mVoiceHat = new VoiceHatDriver(I2S_BUS, DAC_TRIGGER_GPIO, AUDIO_FORMAT_STEREO);
             mVoiceHat.registerAudioInputDriver();
-            mVoiceHat.registerAudioOutputDriver();
+            //mVoiceHat.registerAudioOutputDriver();
             mButton = new Button(BUTTON_PIN, Button.LogicState.PRESSED_WHEN_LOW);
             mButton.setDebounceDelay(BUTTON_DEBOUNCE_DELAY_MS);
             mButton.setOnButtonEventListener(this);
