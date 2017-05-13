@@ -27,20 +27,19 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-
-import java.util.ArrayList;
 
 public class AssistantActivity extends Activity {
+
     private static final String TAG = AssistantActivity.class.getSimpleName();
 
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (VoiceHatAssistantService.ACTION_CONVERSE_RESULT.equals(intent.getAction())) {
+
                 final String spokenRequestText = intent.getStringExtra(VoiceHatAssistantService.ARG_CONVERSE_UTTERANCE);
-                mMainHandler.post(() -> mAssistantRequestsAdapter.add(spokenRequestText));
+                Log.i(TAG, spokenRequestText);
+
             }
         }
     };
@@ -59,30 +58,18 @@ public class AssistantActivity extends Activity {
         }
     };
 
-    private Handler mMainHandler;
-
-    // List & adapter to store and display the history of Assistant Requests.
-    private ArrayList<String> mAssistantRequests = new ArrayList<>();
-    private ArrayAdapter<String> mAssistantRequestsAdapter;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_main);
-        ListView assistantRequestsListView = (ListView) findViewById(R.id.assistantRequestsListView);
-        mAssistantRequestsAdapter =
-                new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,
-                        mAssistantRequests);
-        assistantRequestsListView.setAdapter(mAssistantRequestsAdapter);
-        mMainHandler = new Handler(getMainLooper());
 
         registerReceiver(mBroadcastReceiver, mIntentFilter);
 
         //either start the originial voice hat service
-        bindService(new Intent(this, VoiceHatAssistantService.class), mServiceConnection, BIND_AUTO_CREATE);
+//        bindService(new Intent(this, VoiceHatAssistantService.class), mServiceConnection, BIND_AUTO_CREATE);
         //or the one for the simple breadboard layout
-        // bindService(new Intent(this, BreadboardAssistantService.class), mServiceConnection, BIND_AUTO_CREATE);
+        bindService(new Intent(this, BreadboardAssistantService.class), mServiceConnection, BIND_AUTO_CREATE);
 
     }
 
