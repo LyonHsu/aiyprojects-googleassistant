@@ -15,6 +15,7 @@
  */
 
 package com.example.androidthings.assistant;
+
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.util.Log;
@@ -29,7 +30,7 @@ import com.google.android.things.userdriver.UserDriverManager;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class VoiceHatDriver implements AutoCloseable {
+class VoiceHatDriver implements AutoCloseable {
     private static final String TAG = "VoiceHatDriver";
     // buffer of 0.05 sec of sample data at 48khz / 16bit.
     private static final int BUFFER_SIZE = 96000 / 20;
@@ -37,22 +38,22 @@ public class VoiceHatDriver implements AutoCloseable {
     private static final int FLUSH_SIZE = 48000;
     private I2sDevice mDevice;
     private Gpio mTriggerGpio;
-    private AudioFormat mAudioFormat;
+    private final AudioFormat mAudioFormat;
     private AudioInputUserDriver mAudioInputDriver;
     private AudioOutputUserDriver mAudioOutputDriver;
 
-    public VoiceHatDriver(String i2sBus, String triggerGpioPin, AudioFormat audioFormat)
+    VoiceHatDriver(final String i2sBus, final String triggerGpioPin, final AudioFormat audioFormat)
             throws IOException {
-        PeripheralManagerService pioService = new PeripheralManagerService();
+        final PeripheralManagerService pioService = new PeripheralManagerService();
         try {
             mDevice = pioService.openI2sDevice(i2sBus, audioFormat);
             mTriggerGpio = pioService.openGpio(triggerGpioPin);
             mTriggerGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
             mAudioFormat = audioFormat;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             try {
                 close();
-            } catch (IOException|RuntimeException ignored) {
+            } catch (IOException | RuntimeException ignored) {
             }
             throw e;
         }
@@ -78,7 +79,7 @@ public class VoiceHatDriver implements AutoCloseable {
         }
     }
 
-    public void registerAudioInputDriver() {
+    void registerAudioInputDriver() {
         Log.d(TAG, "registering audio input driver");
         mAudioInputDriver = new AudioInputUserDriver();
         UserDriverManager.getManager().registerAudioInputDriver(
@@ -86,7 +87,7 @@ public class VoiceHatDriver implements AutoCloseable {
         );
     }
 
-    public void registerAudioOutputDriver() {
+    void registerAudioOutputDriver() {
         Log.d(TAG, "registering audio output driver");
         mAudioOutputDriver = new AudioOutputUserDriver();
         UserDriverManager.getManager().registerAudioOutputDriver(
@@ -94,14 +95,14 @@ public class VoiceHatDriver implements AutoCloseable {
         );
     }
 
-    public void unregisterAudioInputDriver() {
+    void unregisterAudioInputDriver() {
         if (mAudioInputDriver != null) {
             UserDriverManager.getManager().unregisterAudioInputDriver(mAudioInputDriver);
             mAudioInputDriver = null;
         }
     }
 
-    public void unregisterAudioOutputDriver() {
+    void unregisterAudioOutputDriver() {
         if (mAudioOutputDriver != null) {
             UserDriverManager.getManager().unregisterAudioOutputDriver(mAudioOutputDriver);
             mAudioOutputDriver = null;
@@ -112,15 +113,15 @@ public class VoiceHatDriver implements AutoCloseable {
 
 
         @Override
-        public void onStandbyChanged(boolean b) {
+        public void onStandbyChanged(final boolean b) {
             Log.d(TAG, "audio input driver standby changed:" + b);
         }
 
         @Override
-        public int read(ByteBuffer byteBuffer, int i) {
+        public int read(final ByteBuffer byteBuffer, final int i) {
             try {
                 return mDevice.read(byteBuffer, i);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Log.e(TAG, "error during read operation:", e);
                 return -1;
             }
@@ -130,28 +131,28 @@ public class VoiceHatDriver implements AutoCloseable {
     private class AudioOutputUserDriver extends AudioOutputDriver {
 
         @Override
-        public void onStandbyChanged(boolean inStandby) {
+        public void onStandbyChanged(final boolean inStandby) {
             Log.d(TAG, "audio output driver standby changed:" + inStandby);
             try {
                 if (!inStandby) {
                     Log.d(TAG, "turning voice hat DAC on");
-                    byte[] buf = new byte[FLUSH_SIZE];
+                    final byte[] buf = new byte[FLUSH_SIZE];
                     mDevice.write(buf, 0, buf.length);
                     mTriggerGpio.setValue(true);
                 } else {
                     Log.d(TAG, "turning voice hat DAC off");
                     mTriggerGpio.setValue(false);
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Log.e(TAG, "error during standby trigger:", e);
             }
         }
 
         @Override
-        public int write(ByteBuffer byteBuffer, int i) {
+        public int write(final ByteBuffer byteBuffer, final int i) {
             try {
                 return mDevice.write(byteBuffer, i);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Log.e(TAG, "error during write operation:", e);
                 return -1;
             }

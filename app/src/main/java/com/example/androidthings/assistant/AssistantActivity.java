@@ -17,14 +17,10 @@
 package com.example.androidthings.assistant;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -32,39 +28,23 @@ public class AssistantActivity extends Activity {
 
     private static final String TAG = AssistantActivity.class.getSimpleName();
 
-    private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (VoiceHatAssistantService.ACTION_CONVERSE_RESULT.equals(intent.getAction())) {
-
-                final String spokenRequestText = intent.getStringExtra(VoiceHatAssistantService.ARG_CONVERSE_UTTERANCE);
-                Log.i(TAG, spokenRequestText);
-
-            }
-        }
-    };
-
-    private final IntentFilter mIntentFilter = new IntentFilter(VoiceHatAssistantService.ACTION_CONVERSE_RESULT);
-
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
+        public void onServiceConnected(final ComponentName name, final IBinder service) {
             Log.d(TAG, "Bound to Assistant Service");
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
+        public void onServiceDisconnected(final ComponentName name) {
 
         }
     };
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_main);
-
-        registerReceiver(mBroadcastReceiver, mIntentFilter);
 
         //either start the originial voice hat service
 //        bindService(new Intent(this, VoiceHatAssistantService.class), mServiceConnection, BIND_AUTO_CREATE);
@@ -75,7 +55,6 @@ public class AssistantActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        unregisterReceiver(mBroadcastReceiver);
         unbindService(mServiceConnection);
         super.onDestroy();
         Log.d(TAG, "onDestroy");

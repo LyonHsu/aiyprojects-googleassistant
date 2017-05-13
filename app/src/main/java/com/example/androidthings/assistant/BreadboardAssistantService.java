@@ -58,16 +58,16 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
 
     // Peripheral constants.
     private static final String I2S_BUS = "I2S1";
-    private static final String DAC_TRIGGER_GPIO = "BCM16";
+
     private static final String BUTTON_PIN = "BCM23";
-    private static final String LED_PIN = "BCM25";
+    private static final String LED_PIN = "BCM24";
     private static final int BUTTON_DEBOUNCE_DELAY_MS = 20;
 
     // Audio constants.
     private static final int SAMPLE_RATE = 16000;
     private static final int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    private static AudioInConfig.Encoding ENCODING_INPUT = AudioInConfig.Encoding.LINEAR16;
-    private static AudioOutConfig.Encoding ENCODING_OUTPUT = AudioOutConfig.Encoding.LINEAR16;
+    private static final AudioInConfig.Encoding ENCODING_INPUT = AudioInConfig.Encoding.LINEAR16;
+    private static final AudioOutConfig.Encoding ENCODING_OUTPUT = AudioOutConfig.Encoding.LINEAR16;
     private static final AudioInConfig ASSISTANT_AUDIO_REQUEST_CONFIG =
             AudioInConfig.newBuilder()
                     .setEncoding(ENCODING_INPUT)
@@ -135,7 +135,7 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
                             if (mLed != null) {
                                 try {
                                     mLed.setValue(!mLed.getValue());
-                                } catch (IOException e) {
+                                } catch (final IOException e) {
                                     Log.e(TAG, "error toggling LED:", e);
                                 }
                             }
@@ -147,7 +147,7 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
                 }
 
                 @Override
-                public void onError(Throwable t) {
+                public void onError(final Throwable t) {
                     Log.e(TAG, "converse error:", t);
                 }
 
@@ -157,7 +157,7 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
                     if (mLed != null) {
                         try {
                             mLed.setValue(false);
-                        } catch (IOException e) {
+                        } catch (final IOException e) {
                             Log.e(TAG, "error turning off LED:", e);
                         }
                     }
@@ -176,7 +176,7 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
     // Assistant Thread and Runnables implementing the push-to-talk functionality.
     private HandlerThread mAssistantThread;
     private Handler mAssistantHandler;
-    private Runnable mStartAssistantRequest = new Runnable() {
+    private final Runnable mStartAssistantRequest = new Runnable() {
         @Override
         public void run() {
             Log.i(TAG, "starting assistant request");
@@ -190,11 +190,11 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
             mAssistantHandler.post(mStreamAssistantRequest);
         }
     };
-    private Runnable mStreamAssistantRequest = new Runnable() {
+    private final Runnable mStreamAssistantRequest = new Runnable() {
         @Override
         public void run() {
-            ByteBuffer audioData = ByteBuffer.allocateDirect(SAMPLE_BLOCK_SIZE);
-            int result =
+            final ByteBuffer audioData = ByteBuffer.allocateDirect(SAMPLE_BLOCK_SIZE);
+            final int result =
                     mAudioRecord.read(audioData, audioData.capacity(), AudioRecord.READ_BLOCKING);
             if (result < 0) {
                 Log.e(TAG, "error reading from audio stream:" + result);
@@ -207,7 +207,7 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
             mAssistantHandler.post(mStreamAssistantRequest);
         }
     };
-    private Runnable mStopAssistantRequest = new Runnable() {
+    private final Runnable mStopAssistantRequest = new Runnable() {
         @Override
         public void run() {
             Log.i(TAG, "ending assistant request");
@@ -223,7 +223,7 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
 
     @Nullable
     @Override
-    public IBinder onBind(Intent intent) {
+    public IBinder onBind(final Intent intent) {
 
         mAssistantThread = new HandlerThread("assistantThread");
         mAssistantThread.start();
@@ -231,25 +231,25 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
 
         try {
             Log.d(TAG, "creating voice hat driver");
-            mBreadboard = new BreadboardDriver(I2S_BUS, DAC_TRIGGER_GPIO, AUDIO_FORMAT_STEREO);
+            mBreadboard = new BreadboardDriver(I2S_BUS, AUDIO_FORMAT_STEREO);
             mBreadboard.registerAudioInputDriver();
 
             mButton = new Button(BUTTON_PIN, Button.LogicState.PRESSED_WHEN_HIGH);
             mButton.setDebounceDelay(BUTTON_DEBOUNCE_DELAY_MS);
             mButton.setOnButtonEventListener(this);
-            PeripheralManagerService pioService = new PeripheralManagerService();
+            final PeripheralManagerService pioService = new PeripheralManagerService();
             mLed = pioService.openGpio(LED_PIN);
             mLed.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Log.d(TAG, "error creating voice hat driver:", e);
             return null;
         }
 
-        AudioManager manager = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
-        int maxVolume = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        final AudioManager manager = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
+        final int maxVolume = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         Log.d(TAG, "setting volume to: " + maxVolume);
         manager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, 0);
-        int outputBufferSize = AudioTrack.getMinBufferSize(AUDIO_FORMAT_OUT_MONO.getSampleRate(),
+        final int outputBufferSize = AudioTrack.getMinBufferSize(AUDIO_FORMAT_OUT_MONO.getSampleRate(),
                 AUDIO_FORMAT_OUT_MONO.getChannelMask(),
                 AUDIO_FORMAT_OUT_MONO.getEncoding());
         mAudioTrack = new AudioTrack.Builder()
@@ -257,7 +257,7 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
                 .setBufferSizeInBytes(outputBufferSize)
                 .build();
         mAudioTrack.play();
-        int inputBufferSize = AudioRecord.getMinBufferSize(AUDIO_FORMAT_STEREO.getSampleRate(),
+        final int inputBufferSize = AudioRecord.getMinBufferSize(AUDIO_FORMAT_STEREO.getSampleRate(),
                 AUDIO_FORMAT_STEREO.getChannelMask(),
                 AUDIO_FORMAT_STEREO.getEncoding());
         mAudioRecord = new AudioRecord.Builder()
@@ -266,7 +266,7 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
                 .setBufferSizeInBytes(inputBufferSize)
                 .build();
 
-        ManagedChannel channel = ManagedChannelBuilder.forTarget(ASSISTANT_ENDPOINT).build();
+        final ManagedChannel channel = ManagedChannelBuilder.forTarget(ASSISTANT_ENDPOINT).build();
         mAssistantService = EmbeddedAssistantGrpc.newStub(channel)
                 .withCallCredentials(MoreCallCredentials.from(ASSISTANT_CREDENTIALS));
 
@@ -274,12 +274,12 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
     }
 
     @Override
-    public void onButtonEvent(Button button, boolean pressed) {
+    public void onButtonEvent(final Button button, final boolean pressed) {
         try {
             if (mLed != null) {
                 mLed.setValue(pressed);
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Log.d(TAG, "error toggling LED:", e);
         }
         if (pressed) {
@@ -304,7 +304,7 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
         if (mLed != null) {
             try {
                 mLed.close();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Log.d(TAG, "error closing LED", e);
             }
             mLed = null;
@@ -312,7 +312,7 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
         if (mButton != null) {
             try {
                 mButton.close();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Log.d(TAG, "error closing button", e);
             }
             mButton = null;
@@ -321,17 +321,12 @@ public class BreadboardAssistantService extends Service implements Button.OnButt
             try {
                 mBreadboard.unregisterAudioInputDriver();
                 mBreadboard.close();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Log.d(TAG, "error closing voice hat driver", e);
             }
             mBreadboard = null;
         }
-        mAssistantHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                mAssistantHandler.removeCallbacks(mStreamAssistantRequest);
-            }
-        });
+        mAssistantHandler.post(() -> mAssistantHandler.removeCallbacks(mStreamAssistantRequest));
         mAssistantThread.quitSafely();
     }
 }
